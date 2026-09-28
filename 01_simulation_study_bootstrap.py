@@ -1058,13 +1058,18 @@ def summarize_bootstrap(rep_df, coef_df):
     for key,g in rep_df.groupby(["n","rho","method"],dropna=False):
         n,rho,method=key
         orig=g[g.original_fit_success==1]
+        r=orig.param_rmse.to_numpy(float)
+        pooled=float(np.sqrt(np.mean(r*r))) if len(r) else np.nan
+        pooled_mcse=(float(np.std(r*r,ddof=1)/(2*pooled*np.sqrt(len(r))))
+                     if len(r)>1 and pooled>0 else np.nan)
         valid=g[(g.original_fit_success==1)&(g.bootstrap_valid80==1)&g.bootstrap_coverage_mean.notna()]
         row=dict(n=n,rho=rho,method=method,n_attempt=len(g),
                  original_success=int(g.original_fit_success.sum()),
                  original_failure_rate=float(1-g.original_fit_success.mean()),
                  mean_boot_success_fraction=float(g.bootstrap_success_fraction.mean()),
                  valid80_reps=int(len(valid)),
-                 param_rmse_mean=float(orig.param_rmse.mean()) if len(orig) else np.nan,
+                 param_rmse_mean=pooled,
+                 param_rmse_mcse=pooled_mcse,
                  sandwich_coverage_mean=float(orig.sandwich_coverage_mean.mean()) if len(orig) else np.nan,
                  bootstrap_coverage_mean_valid80=float(valid.bootstrap_coverage_mean.mean()) if len(valid) else np.nan,
                  bootstrap_interval_length_mean_valid80=float(valid.bootstrap_interval_length_mean.mean()) if len(valid) else np.nan)

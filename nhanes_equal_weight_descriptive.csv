@@ -1,0 +1,2 @@
+n,n_y1,n_y0,n_y0_R1_W1,n_y0_R1_W0,n_y0_R0,sample_rho,weighted_rho,sample_q,weighted_q,weighted_PY1,weighted_proxy_positive_among_observed,mode,design,weight_variable
+8114,1283,6831,220,6243,368,0.9461279461279462,0.9461279461279462,0.03403991954200836,0.03403991954200836,0.15812176485087504,0.1410739825770381,A1C,primary_no_usualcare,UNIT_W

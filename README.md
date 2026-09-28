@@ -1,108 +1,31 @@
-# Partial revelation and doubly robust inference in zero-inflated Bernoulli models
+# Reference results for the revised PR-ZIB manuscript
 
-This repository contains the computational code accompanying the manuscript
-**“Partial revelation and doubly robust inference in zero-inflated Bernoulli models.”**
+These CSVs and four vector figures match the 2026-09-28 manuscript revision.
+The simulation and NHANES files supersede the earlier reference tables.
+All pooled root mean squared errors take the square root AFTER averaging
+squared errors across successful Monte Carlo replications.
 
-The code corresponds to the reported analysis. In particular, the simulation study uses a revelation propensity that is bounded away from zero and one, the AIPW pseudo-gate is not clipped to the unit interval, the DR estimator solves the estimating equations directly, and the NHANES analysis uses the final operational gate/recognition specification reported in the manuscript.
+- `simulation_reported_method_summary.csv`: 114 reported main and NHANES-like cells; `param_rmse_mean` and `pred_rmse_mean` now mean POOLED RMSE.
+- `pooled_method_summary.csv`: all 126 available simulation design cells with the pooled parameter and product-prediction RMSEs and their Monte Carlo SEs.
+- `simulation_reported_coefficient_summary_n2500.csv`: PR_MLE/DR_CF coefficient tables; includes true and mean estimates.
+- `simulation_reported_std_coefficient_summary_n2500.csv`: one STD_ZIB coefficient table (the observed-data-only estimator is invariant to revelation rate and scenario).
+- `bootstrap_reported_method_summary.csv`: the existing B=1000 coverage summaries with the original-sample `param_rmse_mean` and its Monte Carlo SE corrected to pooled RMSE. The eight original-sample sample means and success counts match the corresponding main-simulation cells within 2e-9 and exactly, respectively.
+- `nhanes_reported_*.csv`: survey-weighted HbA1c and FPG fits, replacing the old reference files.
+- `nhanes_equal_weight_*.csv`: equal-weight HbA1c sensitivity fit; it targets a different population.
+- `nhanes_denominator_audit.csv`: direct weighted rho and the test-measurement denominator identity.
+- `positivity_sensitivity.csv`: matched-seed epsilon={0.005,0.02,0.05} experiment.
+- `fig1_*.pdf` and `fig2_*.pdf`: manuscript-ready pooled-RMSE and curvature plots.
 
-## Repository contents
-
-- **`01_simulation_study.ipynb`** (`01_simulation_study.py`)  
-  Reproduces the main Monte Carlo study and the supplementary NHANES-like high-revelation / rare-positive-label experiment. The reported design uses 500 Monte Carlo replications, five-fold cross-fitting, fixed random seeds, and `n = 200, 500, 2500` with `rho = 0.01, 0.02, 0.05, 0.10, 0.20`. It also produces coefficient-level summaries and revelation/ESS diagnostics.
-
-- **`01_simulation_study_bootstrap.ipynb`** (`01_simulation_study_bootstrap.py`)  
-  Reproduces the targeted bootstrap experiment in the Supplementary Materials. For the four reported informative-history cells `(n, rho) = (2500, 0.02), (2500, 0.05), (2500, 0.10), (500, 0.20)`, each of 500 Monte Carlo samples is bootstrapped `B = 1000` times. Every resample refits PR_MLE and, for DR_CF, re-estimates the nuisance functions and resolves the cross-fitted estimating equations. Checkpoint/resume is enabled.
-
-- **`02_nhanes_analysis.ipynb`** (`02_nhanes_analysis.py`)  
-  Reproduces the NHANES 2017–March 2020 pre-pandemic diabetes analysis. The primary analysis uses HbA1c, with FPG as a sensitivity definition. The gate model uses age, BMI, and sex; the recognition model uses insurance, age, BMI, and sex. Usual source of care remains in the nuisance history but is excluded from the primary unpenalized recognition block because the full model is separation-prone. The script also produces the full-covariate sensitivity diagnostics reported in the Supplementary Materials.
-
-- **`requirements.txt`**  
-  Python dependencies used by the analysis.
-
-- **`reference_results/`**  
-  Compact CSV summaries of the reported results, provided as validation targets for a fresh run.
-
-The `.py` and `.ipynb` versions contain the same analysis code. The notebooks are convenient for Google Colab; the scripts are convenient for command-line execution and version control.
-
-## Mapping to the manuscript
-
-| Manuscript output | Code |
-| --- | --- |
-| Main simulation table and RMSE/curvature figures | `01_simulation_study` |
-| Supplementary coefficient-level tables | `01_simulation_study` |
-| Supplementary sample-size results | `01_simulation_study` |
-| Supplementary NHANES-like simulation | `01_simulation_study` |
-| Supplementary targeted `B=1000` bootstrap table | `01_simulation_study_bootstrap` |
-| Main NHANES descriptive, coefficient, and sanity-check tables | `02_nhanes_analysis` |
-| Supplementary NHANES sensitivity diagnostics | `02_nhanes_analysis` |
-
-## Statistical implementation
-
-For the main simulation, the zero-layer revelation propensity is generated as
-
-```text
-e0(H) = eps + (1 - 2 eps) expit(c_rho + gamma^T H),  eps = 0.005,
-```
-
-with `c_rho` calibrated so that the mean revelation probability among observed zeros equals the target `rho`. Thus the main data-generating mechanism satisfies the stated positivity condition by construction.
-
-`DR_CF` uses five-fold cross-fitting. The revelation propensity is fitted with the bounded-logistic family used in the data-generating mechanism, whereas the zero-layer gate regression is an ordinary logistic working model. The AIPW pseudo-gate is left unprojected, and the reported primary estimator does not use statistical propensity truncation.
-
-The NHANES code implements all four observed-data likelihood patterns, including revealed operational negatives `(Y=0, R=1, W=0)`. Analysis weights are used as fixed weights. Consequently, the reported NHANES standard errors are weighted model/estimating-equation standard errors rather than full NHANES design-based standard errors.
-
-## Software
-
-The analysis is written in Python 3 and uses NumPy, pandas, SciPy, statsmodels, scikit-learn, matplotlib, and joblib. The code was run with up to seven worker processes; BLAS threads are restricted to one per worker to avoid oversubscription.
-
-Install the dependencies with
+The complete per-replication CSVs are archived at
+`../replication_data/simulation_replications_20260928.zip`.
+Extract that archive into the repository root to obtain `simulation_full/`
+and `sensitivity_matched_{005,020,050}/`; these generated directories are
+not required to run the code and are not included as loose tracked CSVs.
+Recompute the tables and figures directly from the extracted raw outputs:
 
 ```bash
-python -m pip install -r requirements.txt
+python recompute_results.py --simulation simulation_full --sensitivity-prefix sensitivity_matched --outdir reference_results
 ```
 
-## Reproducing the reported results
-
-From the repository root:
-
-```bash
-python 01_simulation_study.py
-python 01_simulation_study_bootstrap.py
-python 02_nhanes_analysis.py
-```
-
-The full simulation and especially the `B=1000` bootstrap are computationally intensive. For smoke tests:
-
-```bash
-PRZIB_MODE=quick python 01_simulation_study.py
-PRZIB_BOOT_QUICK=1 python 01_simulation_study_bootstrap.py
-```
-
-The number of parallel workers can be changed with `PRZIB_N_JOBS`, for example
-
-```bash
-PRZIB_N_JOBS=4 python 01_simulation_study.py
-```
-
-Random seeds are fixed in the scripts. Floating-point optimization can lead to very small platform-dependent differences, especially in numerically difficult low-revelation cells.
-
-## NHANES data
-
-The NHANES 2017–March 2020 pre-pandemic XPT files are publicly available from CDC/NCHS. `02_nhanes_analysis.py` downloads the required demographic, diabetes questionnaire, health-insurance, health-care-access, body-measures, HbA1c, and fasting-glucose files directly from the CDC/NCHS public data server.
-
-The analysis uses the MEC examination weight for HbA1c and the fasting-subsample weight for FPG, each rescaled to have mean one within the analytic sample. A laboratory measurement is treated as exact only relative to the prespecified operational classification used in the paper, not as error-free biological disease status.
-
-## Output directories
-
-By default the scripts write to
-
-```text
-results/simulation/
-results/bootstrap/
-results/nhanes/
-```
-
-The locations can be changed with `PRZIB_OUTDIR`, `PRZIB_BOOT_OUTDIR`, and `PRZIB_NHANES_OUTDIR`.
-
-## License
-
-The repository retains the existing MIT license.
+CDC NHANES XPT files are downloaded by `02_nhanes_analysis.py` when it runs;
+individual NHANES participant records are not redistributed here.

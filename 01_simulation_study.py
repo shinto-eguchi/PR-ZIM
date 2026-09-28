@@ -761,6 +761,16 @@ def summarize_method(rep_df):
                 x=pd.to_numeric(g[col],errors="coerce").dropna().to_numpy()
                 d[col+"_mean"]=float(np.mean(x)) if len(x) else np.nan
                 d[col+"_mcse"]=float(np.std(x,ddof=1)/np.sqrt(len(x))) if len(x)>1 else np.nan
+                if col in ("param_rmse","pred_rmse") and len(x):
+                    # Each x is a within-replication root mean squared
+                    # error (across parameters or fixed test points).
+                    # Pool squared errors across successful replications.
+                    sq=x**2
+                    pooled=float(np.sqrt(np.mean(sq)))
+                    d[col+"_mean"]=pooled
+                    d[col+"_mcse"]=(float(np.std(sq,ddof=1)/
+                        (2*pooled*np.sqrt(len(x))))
+                        if len(x)>1 and pooled>0 else np.nan)
         out.append(d)
     out=pd.DataFrame(out)
     out=totals.merge(out,on=group,how="left")
@@ -833,33 +843,44 @@ def save_plots(method_summary):
     for scenario in SCENARIOS_A:
         s = A[(A.scenario==scenario) & (A.n==2500)].sort_values("rho")
         if not s.empty:
-            fig, ax = plt.subplots(figsize=(7,5))
-            for method, marker in [("PR_MLE","o"),("DR_CF","s")]:
+            fig, ax = plt.subplots(figsize=(5.1,3.8))
+            for method, marker, color in [("PR_MLE","o","#1769a2"),
+                                          ("DR_CF","s","#c65f28")]:
                 z = s[s.method==method].sort_values("rho")
                 if len(z):
-                    ax.plot(z.rho, z.param_rmse_mean, marker=marker, label=method)
+                    ax.errorbar(z.rho, z.param_rmse_mean,
+                                yerr=z.param_rmse_mcse,fmt=marker+"-",
+                                color=color,lw=1.6,ms=4.5,capsize=2.5,
+                                label=method)
             z0 = s[s.method=="STD_ZIB"]
             if len(z0):
                 ax.axhline(float(z0.param_rmse_mean.iloc[0]), linestyle="--", label="STD_ZIB")
+            ax.set_xscale("log")
             ax.set_xticks(RHO_GRID_A, [f"{x:.2f}" for x in RHO_GRID_A])
             ax.set_xlabel(r"Target revelation rate $\rho$")
-            ax.set_ylabel("Mean parameter RMSE")
+            ax.set_ylabel("Pooled parameter RMSE")
             ax.set_title(title_map[scenario])
             ax.legend()
             fig.tight_layout()
-            fig.savefig(os.path.join(plotdir, f"fig1_rmse_{'clean' if scenario=='clean' else 'informative'}_20260922.png"), dpi=170)
+            fig.savefig(os.path.join(plotdir, f"fig1_rmse_{'clean' if scenario=='clean' else 'informative'}_20260928.pdf"),bbox_inches="tight")
             plt.close(fig)
 
             zpr = s[s.method=="PR_MLE"].sort_values("rho")
             if len(zpr) and "min_eig_or_sing_mean" in zpr.columns:
-                fig, ax = plt.subplots(figsize=(7,5))
+                fig, ax = plt.subplots(figsize=(5.1,3.8))
                 ax.plot(zpr.rho, zpr.min_eig_or_sing_mean, marker="o")
+                z0=s[s.method=="STD_ZIB"]
+                if len(z0):
+                    ax.axhline(float(z0.min_eig_or_sing_mean.iloc[0]),
+                               linestyle="--",label=r"STD_ZIB ($\rho=0$ baseline)")
+                ax.set_xscale("log")
                 ax.set_xticks(RHO_GRID_A, [f"{x:.2f}" for x in RHO_GRID_A])
                 ax.set_xlabel(r"Target revelation rate $\rho$")
                 ax.set_ylabel("Mean minimum curvature eigenvalue")
                 ax.set_title(title_map[scenario])
+                ax.legend()
                 fig.tight_layout()
-                fig.savefig(os.path.join(plotdir, f"fig2_mineig_{'clean' if scenario=='clean' else 'informative'}_20260922.png"), dpi=170)
+                fig.savefig(os.path.join(plotdir, f"fig2_mineig_{'clean' if scenario=='clean' else 'informative'}_20260928.pdf"),bbox_inches="tight")
                 plt.close(fig)
 
     # Trimming sensitivity: delta RMSE relative to untruncated DR.
