@@ -640,6 +640,11 @@ def make_analysis_base(dat, mode):
 
     needed = ["Y", "INSURED", "USUALCARE", "AGE_YEARS", "BMI", "FEMALE", WVAR]
     base = dat.dropna(subset=needed).copy()
+    # Restore stored zero weights before selecting the survey-weighted sample.
+    # Some XPT readers decode these zeros as 2**(-260).  Documented positive
+    # WTMECPRP/WTSAFPRP values are many orders of magnitude larger.
+    zero_encoded = base[WVAR].ge(0) & base[WVAR].lt(1e-50)
+    base.loc[zero_encoded, WVAR] = 0.0
     base = base[base[WVAR] > 0].copy()
 
     base["AGE_YEARS_Z"] = (base["AGE_YEARS"] - base["AGE_YEARS"].mean()) / base["AGE_YEARS"].std(ddof=0)
