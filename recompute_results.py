@@ -47,7 +47,7 @@ def figures(raw,out,folder):
                    label="STD_ZIB")
         ax.set_xscale("log");ax.set_xticks([.01,.02,.05,.1,.2])
         ax.set_xticklabels([".01",".02",".05",".10",".20"])
-        ax.set(xlabel=r"Revelation probability $\rho$",
+        ax.set(xlabel=r"Target revelation rate $\rho$",
                ylabel="Pooled parameter RMSE")
         ax.grid(alpha=.18);ax.legend(frameon=False,fontsize=8)
         fig.tight_layout()
@@ -66,7 +66,7 @@ def figures(raw,out,folder):
                    label=r"STD_ZIB ($\rho=0$ baseline)")
         ax.set_xscale("log");ax.set_xticks([.01,.02,.05,.1,.2])
         ax.set_xticklabels([".01",".02",".05",".10",".20"])
-        ax.set(xlabel=r"Revelation probability $\rho$",
+        ax.set(xlabel=r"Target revelation rate $\rho$",
                ylabel="Mean smallest curvature eigenvalue")
         ax.grid(alpha=.18);ax.legend(frameon=False,fontsize=8)
         fig.tight_layout()

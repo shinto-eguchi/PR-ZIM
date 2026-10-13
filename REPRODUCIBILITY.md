@@ -2,17 +2,16 @@
 
 ## Fixed source version
 
-The corrected analysis and reference results are available in
-https://github.com/shinto-eguchi/PR-ZIM at commit
-489a66ffa4d86404c11a84545547692d34b02600
-
-This commit identifies the completed code-and-results correction. A later
-commit adding this document does not change the version fixed here.
+The submission version, including the survey-weighted PR_MLE score-sandwich
+standard errors in Table 7 and the revised axes of Figures 1--2, is the
+GitHub release tag **`revision-1`**. The exact commit SHA is displayed by
+GitHub under that tag; the tag identifies the same immutable commit once
+published. Do not use the earlier `489a66f` commit to reproduce Table 7.
 
 ```bash
 git clone https://github.com/shinto-eguchi/PR-ZIM.git
 cd PR-ZIM
-git checkout 489a66ffa4d86404c11a84545547692d34b02600
+git checkout revision-1
 python -m pip install -r requirements.txt
 ```
 
@@ -88,3 +87,87 @@ the full calculations are computationally intensive. See `README.md` for
 quick modes, output directories, and the additional positivity and
 equal-weight sensitivity experiments. Individual NHANES participant records
 are downloaded from CDC/NCHS and are not redistributed in this repository.
+
+## Table 7: PR_MLE score-sandwich reproducibility (revision-1)
+
+The original `02_nhanes_analysis.py` computes curvature-based PR_MLE SEs.
+The paper's revised Table 7 instead reports the fixed-analysis-weight,
+independent-observation **score-sandwich** SEs. Reproduce the revised table
+from the original CDC/NCHS data as follows:
+
+```bash
+python 02_nhanes_analysis.py
+python recompute_PR_sandwich_SE.py
+python apply_PR_sandwich_csv.py --input results/nhanes/all_coefficients.csv \
+  --reference results/pr_sandwich/PR_MLE_weighted_sandwich_SE.csv
+```
+
+`PR_MLE_weighted_sandwich_SE.csv` is the fixed reference for all 18 PR
+coefficients, while `nhanes_reported_coefficients.csv` and
+`reference_results/nhanes_reported_coefficients.csv` contain the updated
+published SEs. The transformation preserves all other rows and estimates.
+For FPG (complete revelation), PR and DR SEs should agree to reported
+precision if the same score sandwich is used. These SEs treat analysis
+weights as fixed and do **not** account for NHANES strata or clusters;
+they are not design-based survey SEs. Source and reference CSVs do not
+redistribute restricted individual-level NHANES records.
+
+## Figures 1 and 2 (revision-1)
+
+The revised source `recompute_results.py` uses `Target revelation rate` on
+both horizontal axes. To regenerate the four figure PDFs from the archived
+replicate outputs (no new 500-replication fitting required):
+
+```bash
+python -m zipfile -e replication_data/simulation_replications_20260928.zip .
+python recompute_results.py --simulation simulation_full \
+  --sensitivity-prefix sensitivity_matched --outdir reference_results
+cp reference_results/fig1_rmse_*_20260928.pdf .
+cp reference_results/fig2_mineig_*_20260928.pdf .
+```
+
+The PDF copies in the repository root are those included in the manuscript.
+The original September 2026 commit `489a66f` remains available as a
+historical snapshot and is superseded for Table 7 and figure labels.
+
+## Table 7: PR_MLE score-sandwich reproducibility (revision-1)
+
+The original `02_nhanes_analysis.py` computes curvature-based PR_MLE SEs.
+The paper's revised Table 7 instead reports the fixed-analysis-weight,
+independent-observation **score-sandwich** SEs. Reproduce the revised table
+from the original CDC/NCHS data as follows:
+
+```bash
+python 02_nhanes_analysis.py
+python recompute_PR_sandwich_SE.py
+python apply_PR_sandwich_csv.py --input results/nhanes/all_coefficients.csv \
+  --reference results/pr_sandwich/PR_MLE_weighted_sandwich_SE.csv
+```
+
+`PR_MLE_weighted_sandwich_SE.csv` is the fixed reference for all 18 PR
+coefficients, while `nhanes_reported_coefficients.csv` and
+`reference_results/nhanes_reported_coefficients.csv` contain the updated
+published SEs. The transformation preserves all other rows and estimates.
+For FPG (complete revelation), PR and DR SEs should agree to reported
+precision if the same score sandwich is used. These SEs treat analysis
+weights as fixed and do **not** account for NHANES strata or clusters;
+they are not design-based survey SEs. Source and reference CSVs do not
+redistribute restricted individual-level NHANES records.
+
+## Figures 1 and 2 (revision-1)
+
+The revised source `recompute_results.py` uses `Target revelation rate` on
+both horizontal axes. To regenerate the four figure PDFs from the archived
+replicate outputs (no new 500-replication fitting required):
+
+```bash
+python -m zipfile -e replication_data/simulation_replications_20260928.zip .
+python recompute_results.py --simulation simulation_full \
+  --sensitivity-prefix sensitivity_matched --outdir reference_results
+cp reference_results/fig1_rmse_*_20260928.pdf .
+cp reference_results/fig2_mineig_*_20260928.pdf .
+```
+
+The PDF copies in the repository root are those included in the manuscript.
+The original September 2026 commit `489a66f` remains available as a
+historical snapshot and is superseded for Table 7 and figure labels.
